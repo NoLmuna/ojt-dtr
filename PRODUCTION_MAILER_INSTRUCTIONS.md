@@ -20,6 +20,7 @@ In your production environment (Vercel, AWS, your own VPS, etc.), you need to se
 # Mailer configuration (Example using Gmail SMTP)
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="465"
+SMTP_SECURE="true"
 SMTP_USER="your.app.email@gmail.com"
 SMTP_PASS="your-16-digit-app-password"
 SMTP_FROM="OJT DTR System <your.app.email@gmail.com>"
@@ -27,6 +28,7 @@ SMTP_FROM="OJT DTR System <your.app.email@gmail.com>"
 # Application URL (CRITICAL for formatting the invitation link)
 # Make sure to omit the trailing slash
 NEXT_PUBLIC_APP_URL="https://your-production-domain.com"
+
 ```
 
 ## 3. Configuring Gmail (If using a Google Account)

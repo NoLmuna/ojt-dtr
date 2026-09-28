@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { jsonResponse, readValidatedJson } from "@/lib/security";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -13,16 +12,10 @@ export async function POST(req: Request) {
       return jsonResponse({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // req is Request, but readValidatedJson takes NextRequest, though structurally they are very similar here.
-    // wait, NextRequest extends Request and adds things like nextUrl, page, etc. Since we just use req.json(), we can typecast.
-    const parsed = await readValidatedJson(req as any, z.object({ supervisorEmail: z.string().email() }));
+    const parsed = await readValidatedJson(req, z.object({ supervisorEmail: z.string().email() }));
     if (!parsed.success) return parsed.response;
 
-    const { supervisorEmail } = parsed.data;
-
-    if (!supervisorEmail || typeof supervisorEmail !== "string") {
-      return jsonResponse({ error: "Invalid email" }, { status: 400 });
-    }
+    const supervisorEmail = parsed.data.supervisorEmail.trim().toLowerCase();
 
     const traineeId = session.user.id;
     const trainee = await prisma.user.findUnique({
@@ -31,6 +24,10 @@ export async function POST(req: Request) {
 
     if (!trainee) {
       return jsonResponse({ error: "Trainee not found" }, { status: 404 });
+    }
+
+    if (trainee.email && supervisorEmail === trainee.email.trim().toLowerCase()) {
+      return jsonResponse({ error: "You cannot invite yourself as your supervisor." }, { status: 400 });
     }
 
     // Generate secure token
@@ -68,8 +65,9 @@ export async function POST(req: Request) {
     }
 
     // Build the acceptance link
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || req.headers.get("origin") || "http://localhost:3000";
-    const acceptLink = `${baseUrl}/invite/accept?token=${invitation.token}`;
+    const rawBaseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || req.headers.get("origin") || "http://localhost:3000";
+    const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, "");
+    const acceptLink = `${cleanBaseUrl}/invite/accept?token=${invitation.token}`;
 
     // For local development, log the link to the console
     if (process.env.NODE_ENV === 'development') {
@@ -87,8 +85,14 @@ export async function POST(req: Request) {
     );
 
     if (!mailResult.success) {
-      // Optionally you could delete the invite if it failed, or return an error but keep the invite.
-      console.warn("Mail failed but invite generated", mailResult.error);
+      console.error("Mail failed to send:", mailResult.error);
+      // Clean up newly created invite so user can retry cleanly
+      if (!existingInvite) {
+        await prisma.invitation.delete({ where: { id: invitation.id } }).catch(() => {});
+      }
+      return jsonResponse({
+        error: `Failed to deliver email to ${supervisorEmail}: ${mailResult.error || "SMTP delivery failure"}. Please check your SMTP configuration in .env.`
+      }, { status: 500 });
     }
 
     return jsonResponse({ success: true, invitation }, { status: 200 });

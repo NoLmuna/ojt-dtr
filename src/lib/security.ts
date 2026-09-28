@@ -146,7 +146,7 @@ export function jsonError(message: string, status: number) {
 }
 
 export async function readValidatedJson<T>(
-  req: NextRequest,
+  req: NextRequest | Request,
   schema: z.ZodType<T>
 ): Promise<{ success: true; data: T } | { success: false; response: NextResponse }> {
   let body: unknown;

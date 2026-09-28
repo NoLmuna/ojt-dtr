@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { jsonResponse, readValidatedJson } from "@/lib/security";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +11,7 @@ export async function POST(req: Request) {
       return jsonResponse({ error: "Unauthorized. Please log in first." }, { status: 401 });
     }
 
-    const parsed = await readValidatedJson(req as any, z.object({ token: z.string() }));
+    const parsed = await readValidatedJson(req, z.object({ token: z.string() }));
     if (!parsed.success) return parsed.response;
 
     const { token } = parsed.data;
@@ -29,13 +28,27 @@ export async function POST(req: Request) {
       return jsonResponse({ error: "Invalid invitation" }, { status: 404 });
     }
 
-    if (invitation.status !== "PENDING" || invitation.expiresAt < new Date()) {
-      return jsonResponse({ error: "Invitation expired or already used" }, { status: 400 });
+    if (invitation.status === "ACCEPTED") {
+      return jsonResponse({ success: true, message: "Invitation has already been accepted." }, { status: 200 });
     }
 
-    // Ensure the mapped emails match
-    if (invitation.supervisorEmail !== session.user.email) {
-      return jsonResponse({ error: "Email mismatch. Please log in with the invited email address." }, { status: 403 });
+    if (invitation.status !== "PENDING" || invitation.expiresAt < new Date()) {
+      return jsonResponse({ error: "Invitation expired or is no longer valid." }, { status: 400 });
+    }
+
+    // Ensure the mapped emails match (case-insensitive)
+    const sessionEmail = session.user.email.trim().toLowerCase();
+    const invitedEmail = invitation.supervisorEmail.trim().toLowerCase();
+
+    if (invitedEmail !== sessionEmail) {
+      return jsonResponse({
+        error: `Email mismatch. This invitation was sent to "${invitation.supervisorEmail}", but you are signed in as "${session.user.email}". Please switch to the correct Google account.`,
+      }, { status: 403 });
+    }
+
+    // Trainee cannot accept their own invite to become their own supervisor
+    if (invitation.traineeId === session.user.id) {
+      return jsonResponse({ error: "You cannot accept your own supervisor invitation." }, { status: 400 });
     }
 
     // Set accepting user as SUPERVISOR and link trainee
