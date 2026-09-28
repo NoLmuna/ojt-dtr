@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String      @id @default(cuid())
+  role          Role        @default(TRAINEE)
+  name          String?
+  email         String      @unique
+  emailVerified DateTime?
+  image         String?
+  course        String?
+  school        String?
+  company       String?
+  companyLat    Float?
+  companyLng    Float?
+  targetHours   Float?
+  allowWeekends  Boolean     @default(false)
+  
+  // A trainee can have one supervisor
+  supervisorId  String?
+  supervisor    User?       @relation("SupervisorToTrainee", fields: [supervisorId], references: [id])
+  
+  // A supervisor can have many trainees
+  trainees      User[]      @relation("SupervisorToTrainee")
+
+  accounts      Account[]
+  sessions      Session[]
+  dtrRecords    DTRRecord[]
+  invitations   Invitation[] @relation("SentInvitations")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("user")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("account")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtoken")
+}
+
+model DTRRecord {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month      Int
+  year       Int
+  periodFrom DateTime
+  periodTo   DateTime
+  entries    DTREntry[]
+  totalHours Float      @default(0)
+  status     String     @default("draft")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([userId, month, year])
+  @@map("dtrrecord")
+}
+
+model DTREntry {
+  id          String    @id @default(cuid())
+  dtrRecordId String
+  dtrRecord   DTRRecord @relation(fields: [dtrRecordId], references: [id], onDelete: Cascade)
+  day         Int
+  amArrival   String?
+  amDeparture String?
+  pmArrival   String?
+  pmDeparture String?
+  hoursWorked Float     @default(0)
+  includeBreak Boolean   @default(true)
+  remarks     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([dtrRecordId, day])
+  @@map("dtrentry")
+}
+
+enum Role {
+  TRAINEE
+  SUPERVISOR
+  ADMIN
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model Invitation {
+  id              String           @id @default(cuid())
+  traineeId       String
+  trainee         User             @relation("SentInvitations", fields: [traineeId], references: [id], onDelete: Cascade)
+  supervisorEmail String
+  token           String           @unique
+  status          InvitationStatus @default(PENDING)
+  expiresAt       DateTime
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("invitation")
+}
