@@ -95,7 +95,7 @@ export function InstallPrompt() {
     <aside
       role="dialog"
       aria-label="Install application banner"
-      className="fixed inset-x-4 bottom-5 z-50 mx-auto max-w-md rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-xl backdrop-blur-md animate-fade-in"
+      className="fixed inset-x-4 bottom-5 z-50 mx-auto max-w-md rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-xl backdrop-blur-md animate-fade-in text-zinc-900"
     >
       <div className="flex items-start gap-3.5">
         <Image
@@ -103,21 +103,21 @@ export function InstallPrompt() {
           alt="OJT DTR Logo"
           width={44}
           height={44}
-          className="rounded-xl shadow-xs shrink-0 object-cover"
+          className="rounded-xl shrink-0 object-cover ring-1 ring-zinc-200"
         />
 
         <div className="flex-1 pr-1">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Install OJT DTR</h3>
+            <h3 className="text-sm font-semibold text-zinc-900">Install OJT DTR</h3>
             <button
               onClick={dismiss}
               aria-label="Dismiss banner"
-              className="text-slate-400 hover:text-slate-600 transition-colors -mr-1 -mt-1 p-1 rounded-lg cursor-pointer"
+              className="text-zinc-400 hover:text-zinc-600 transition-colors -mr-1 -mt-1 p-1 rounded-lg cursor-pointer"
             >
               <X size={15} />
             </button>
           </div>
-          <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
+          <p className="mt-0.5 text-xs text-zinc-500 leading-relaxed">
             Add this app to your home screen for faster access, offline capability, and daily attendance logging.
           </p>
 
@@ -125,14 +125,14 @@ export function InstallPrompt() {
             <button
               type="button"
               onClick={dismiss}
-              className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 cursor-pointer"
+              className="rounded-xl border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 cursor-pointer"
             >
               Not now
             </button>
             <button
               type="button"
               onClick={installApp}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-500 cursor-pointer active:scale-98"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-zinc-800 cursor-pointer active:scale-98"
             >
               <Download size={13} />
               <span>Install</span>

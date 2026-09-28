@@ -11,18 +11,12 @@ import {
   LogOut,
   ChevronRight,
   Clock,
-  User,
   Download,
   LogIn,
   LogOut as LogOutIcon,
-  MapPin,
   Calendar,
-  CheckCircle2,
   AlertCircle,
-  FileCheck,
-  TrendingUp,
-  Building2,
-  Sparkles
+  Building2
 } from "lucide-react";
 import { MONTHS, formatHoursMinutes, haversineDistance } from "@/lib/utils";
 import { GlobalLoader } from "@/components/global-loader";
@@ -63,15 +57,14 @@ export default function DashboardPage() {
     }
   }, [status, session, router]);
 
-  // Live ticking clock
+  // Live ticking clock (hours & minutes)
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(
         now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
+          hour: "numeric",
           minute: "2-digit",
-          second: "2-digit",
           hour12: true,
         })
       );
@@ -148,6 +141,7 @@ export default function DashboardPage() {
 
   const handlePunch = async (action: "timeIn" | "timeOut") => {
     setPunching(true);
+
     try {
       if (!companyCoords) {
         toast("Please set your Company location in Profile Settings first.", "error");
@@ -266,34 +260,35 @@ export default function DashboardPage() {
     year: "numeric"
   }).format(new Date());
 
-  // Truncate long company address for clean display
   const displayCompany = companyName ? (companyName.length > 40 ? `${companyName.slice(0, 38)}...` : companyName) : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-zinc-900 flex flex-col">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 w-full border-b border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs">
+      <header className="sticky top-0 z-30 w-full border-b border-zinc-200/80 bg-white/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="flex items-center gap-2.5">
               <Image
                 src="/icons/DTR-ICON.png"
                 alt="OJT DTR Logo"
-                width={36}
-                height={36}
-                className="rounded-xl shadow-xs object-cover"
+                width={34}
+                height={34}
+                className="rounded-xl object-cover ring-1 ring-zinc-200"
                 priority
               />
-              <div>
-                <span className="font-bold text-base text-slate-900 tracking-tight">OJT<span className="text-blue-600">.DTR</span></span>
-                <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-base text-zinc-900 tracking-tight">
+                  OJT<span className="text-blue-600">.DTR</span>
+                </span>
+                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
                   Trainee
                 </span>
               </div>
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {(session?.user?.role === "SUPERVISOR" || session?.user?.role === "ADMIN") && (
               <Link
                 href="/supervisor/dashboard"
@@ -305,7 +300,7 @@ export default function DashboardPage() {
 
             <Link
               href="/profile"
-              className="flex items-center gap-2 text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl transition-all"
+              className="flex items-center gap-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200/90 px-3 py-1.5 rounded-xl shadow-2xs transition-all"
             >
               {session?.user?.image ? (
                 <Image
@@ -313,14 +308,14 @@ export default function DashboardPage() {
                   alt="avatar"
                   width={22}
                   height={22}
-                  className="rounded-full ring-1 ring-slate-300"
+                  className="rounded-full ring-1 ring-zinc-200"
                 />
               ) : (
                 <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-[10px]">
                   {session?.user?.name ? session.user.name.charAt(0) : "U"}
                 </div>
               )}
-              <span className="font-semibold text-slate-800 hidden sm:inline-block max-w-[130px] truncate">
+              <span className="font-semibold text-zinc-800 hidden sm:inline-block max-w-[130px] truncate">
                 {session?.user?.name || "Profile"}
               </span>
             </Link>
@@ -328,7 +323,7 @@ export default function DashboardPage() {
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               title="Sign Out"
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
             >
               <LogOut size={16} />
             </button>
@@ -338,19 +333,14 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Welcome Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+        {/* Welcome Card */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-zinc-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Welcome back, {session?.user?.name?.split(" ")[0] || "Trainee"}
-              </h1>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Active
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-1.5">
-              <Calendar size={13} className="text-slate-400" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">
+              Welcome back, {session?.user?.name?.split(" ")[0] || "Trainee"}
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-500 mt-1 flex items-center gap-1.5">
+              <Calendar size={13} className="text-zinc-400" />
               <span>{formattedDate}</span>
             </p>
           </div>
@@ -359,10 +349,10 @@ export default function DashboardPage() {
           {companyName ? (
             <div
               title={companyName}
-              className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-xl self-start md:self-center"
+              className="flex items-center gap-2 text-xs text-zinc-600 bg-zinc-50 border border-zinc-200 px-3.5 py-2 rounded-xl self-start md:self-center"
             >
-              <Building2 size={15} className="text-blue-600 shrink-0" />
-              <span className="font-medium text-slate-800">{displayCompany}</span>
+              <Building2 size={14} className="text-blue-600 shrink-0" />
+              <span className="font-medium text-zinc-800">{displayCompany}</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
             </div>
           ) : (
@@ -371,38 +361,35 @@ export default function DashboardPage() {
               className="flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-xl transition-colors self-start md:self-center"
             >
               <AlertCircle size={14} />
-              <span>Set Company Location in Profile &rarr;</span>
+              <span>Set Workplace in Profile &rarr;</span>
             </Link>
           )}
         </div>
 
-        {/* Hero Attendance Station */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-6 sm:p-7 shadow-md relative overflow-hidden">
-          {/* Subtle background glow */}
-          <div className="absolute right-0 top-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        {/* Daily Attendance Station (Harmonious White Card) */}
+        <div className="bg-white border border-zinc-200/90 rounded-2xl p-6 sm:p-7 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] uppercase tracking-wider font-semibold text-blue-300">
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-500">
                   Daily Attendance Station
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {companyCoords ? "Geofence Ready" : "Location Required"}
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {companyCoords ? "Geofence Active" : "Location Required"}
                 </span>
               </div>
 
               <div className="flex items-baseline gap-3">
-                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono text-white">
-                  {currentTime || "--:--:-- --"}
+                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono text-zinc-900">
+                  {currentTime || "--:-- --"}
                 </div>
               </div>
 
-              <p className="text-xs text-slate-300 max-w-md">
+              <p className="text-xs text-zinc-500 max-w-md">
                 {companyCoords
-                  ? "Punches are verified within 100m radius of your registered agency."
-                  : "Please configure your company coordinates in Profile to enable verified punches."}
+                  ? "Punches are verified within 100m radius of your registered workplace."
+                  : "Please configure your workplace coordinates in Profile to enable punches."}
               </p>
             </div>
 
@@ -411,18 +398,18 @@ export default function DashboardPage() {
               <button
                 onClick={() => handlePunch("timeIn")}
                 disabled={punching}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-sm py-3 px-6 rounded-xl shadow-md transition-all duration-150 cursor-pointer active:scale-98"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs sm:text-sm py-2.5 px-5 rounded-xl shadow-xs transition-colors cursor-pointer active:scale-98"
               >
-                <LogIn size={16} />
+                <LogIn size={15} />
                 <span>{punching ? "Verifying..." : "Time In (AM/PM)"}</span>
               </button>
 
               <button
                 onClick={() => handlePunch("timeOut")}
                 disabled={punching}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-slate-800/90 hover:bg-slate-700/90 hover:text-rose-300 disabled:opacity-50 text-slate-200 border border-slate-700 font-semibold text-sm py-3 px-6 rounded-xl transition-all duration-150 cursor-pointer active:scale-98"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-zinc-50 text-zinc-800 border border-zinc-300 disabled:opacity-50 font-semibold text-xs sm:text-sm py-2.5 px-5 rounded-xl shadow-2xs transition-colors cursor-pointer active:scale-98"
               >
-                <LogOutIcon size={16} />
+                <LogOutIcon size={15} />
                 <span>{punching ? "Verifying..." : "Time Out (AM/PM)"}</span>
               </button>
             </div>
@@ -430,33 +417,33 @@ export default function DashboardPage() {
         </div>
 
         {/* 3 Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Card 1: Total Rendered Hours */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                 Rendered Hours
               </span>
-              <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Clock size={16} />
               </div>
             </div>
 
             <div>
-              <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 font-mono">
                 {formatHoursMinutes(totalRenderedHours)}
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Accumulated across {records.length} monthly DTR {records.length === 1 ? "sheet" : "sheets"}
+              <p className="text-xs text-zinc-500 mt-1">
+                Across {records.length} {records.length === 1 ? "monthly sheet" : "monthly sheets"}
               </p>
             </div>
           </div>
 
           {/* Card 2: Internship Target Hours */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Target Completion
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                Target Progress
               </span>
               {targetHours ? (
                 <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-mono">
@@ -467,65 +454,65 @@ export default function DashboardPage() {
 
             {targetHours && targetHours > 0 ? (
               <div className="space-y-2">
-                <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div className="w-full bg-zinc-100 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 h-2.5 rounded-full transition-all duration-500"
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${completionPercentage}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-slate-600">
-                  <span className="font-semibold text-slate-900">{totalRenderedHours.toFixed(1)} / {targetHours} hrs</span>
-                  <span className="text-slate-500">
+                <div className="flex justify-between text-xs text-zinc-600">
+                  <span className="font-semibold text-zinc-900">{totalRenderedHours.toFixed(1)} / {targetHours} hrs</span>
+                  <span className="text-zinc-500">
                     {targetHours - totalRenderedHours > 0
-                      ? `${(targetHours - totalRenderedHours).toFixed(1)} hrs remaining`
-                      : "Goal Completed"}
+                      ? `${(targetHours - totalRenderedHours).toFixed(1)} hrs left`
+                      : "Completed"}
                   </span>
                 </div>
               </div>
             ) : (
               <div>
-                <p className="text-xs text-slate-500 mb-2">No required target hours defined.</p>
+                <p className="text-xs text-zinc-500 mb-1.5">No target hours set.</p>
                 <Link
                   href="/profile"
                   className="text-xs font-semibold text-blue-600 hover:text-blue-700"
                 >
-                  Configure target in Profile &rarr;
+                  Set target in Profile &rarr;
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Card 3: Form 48 Compliance */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
+          {/* Card 3: Monthly Records Overview */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Institutional Export
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                DTR Sheets
               </span>
-              <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                <FileCheck size={16} />
+              <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <FileText size={16} />
               </div>
             </div>
 
             <div>
-              <div className="text-base font-bold text-slate-900">
-                CSC Form 48 Ready
+              <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 font-mono">
+                {records.length} <span className="text-sm font-normal text-zinc-500">Period{records.length !== 1 ? "s" : ""}</span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Official two-column civil service layout with signature sections.
+              <p className="text-xs text-zinc-500 mt-1">
+                {records.filter(r => r.status.toLowerCase() === "approved").length} approved • {records.filter(r => r.status.toLowerCase() !== "approved").length} pending
               </p>
             </div>
           </div>
         </div>
 
         {/* Monthly DTR Records Section */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="bg-white border border-zinc-200/80 rounded-2xl shadow-xs overflow-hidden">
           {/* Section Header */}
-          <div className="p-5 sm:p-6 border-b border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-5 sm:p-6 border-b border-zinc-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+              <h2 className="text-lg font-bold text-zinc-900 tracking-tight">
                 Monthly DTR Records
               </h2>
-              <span className="text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">
+              <span className="text-xs font-bold bg-zinc-100 text-zinc-700 px-2.5 py-0.5 rounded-full border border-zinc-200">
                 {records.length}
               </span>
             </div>
@@ -534,7 +521,7 @@ export default function DashboardPage() {
               {records.length > 0 && (
                 <button
                   onClick={toggleSelectAll}
-                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                  className="text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 px-3 py-2 rounded-xl transition-colors cursor-pointer"
                 >
                   {selectedRecords.size === records.length ? "Deselect All" : "Select All"}
                 </button>
@@ -544,7 +531,7 @@ export default function DashboardPage() {
                 <button
                   onClick={exportSelected}
                   disabled={exporting}
-                  className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
                 >
                   {exporting ? (
                     <div className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -557,7 +544,7 @@ export default function DashboardPage() {
 
               <button
                 onClick={() => setShowNewModal(true)}
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
               >
                 <Plus size={15} />
                 <span>New DTR Period</span>
@@ -572,21 +559,21 @@ export default function DashboardPage() {
                 <Calendar size={24} />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-slate-800">No DTR records created yet</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                <h3 className="text-sm font-semibold text-zinc-800">No DTR records created yet</h3>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
                   Create your first monthly record to begin logging AM/PM attendance and tracking hours.
                 </p>
               </div>
               <button
                 onClick={() => setShowNewModal(true)}
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs"
               >
                 <Plus size={15} />
                 <span>Create First Record</span>
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-zinc-100">
               {records.map((record) => {
                 const isSelected = selectedRecords.has(record.id);
 
@@ -594,7 +581,7 @@ export default function DashboardPage() {
                   <div
                     key={record.id}
                     className={`flex items-center transition-colors group ${
-                      isSelected ? "bg-blue-50/40" : "hover:bg-slate-50/70"
+                      isSelected ? "bg-blue-50/40" : "hover:bg-zinc-50/80"
                     }`}
                   >
                     <label className="flex items-center justify-center pl-5 pr-3 py-4 cursor-pointer">
@@ -602,7 +589,7 @@ export default function DashboardPage() {
                         type="checkbox"
                         checked={isSelected}
                         onChange={(e) => toggleSelect(record.id, e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
                     </label>
 
@@ -611,12 +598,12 @@ export default function DashboardPage() {
                       className="flex-1 flex items-center justify-between py-4 pr-5 pl-2"
                     >
                       <div className="flex items-center gap-3.5">
-                        <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
+                        <div className="h-10 w-10 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center font-bold text-sm group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
                           <Calendar size={18} />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm sm:text-base text-slate-900">
+                            <span className="font-semibold text-sm sm:text-base text-zinc-900">
                               {MONTHS[record.month - 1]} {record.year}
                             </span>
                             <span
@@ -627,9 +614,9 @@ export default function DashboardPage() {
                               {record.status}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                            <span className="flex items-center gap-1 font-mono font-medium text-slate-700">
-                              <Clock size={12} className="text-slate-400" />
+                          <div className="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+                            <span className="flex items-center gap-1 font-mono font-medium text-zinc-800">
+                              <Clock size={12} className="text-zinc-400" />
                               {formatHoursMinutes(record.totalHours)}
                             </span>
                             <span>•</span>
@@ -640,9 +627,9 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">
                         <span className="hidden sm:inline">Open DTR</span>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={15} />
                       </div>
                     </Link>
                   </div>
@@ -655,24 +642,24 @@ export default function DashboardPage() {
 
       {/* New DTR Modal */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-sm p-6 space-y-5">
+        <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-2xl w-full max-w-sm p-6 space-y-5 text-zinc-900">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Create Monthly DTR</h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <h2 className="text-lg font-bold text-zinc-900">Create Monthly DTR</h2>
+              <p className="text-xs text-zinc-500 mt-1">
                 Select the target month and year for your attendance sheet.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
                   Month
                 </label>
                 <select
                   value={newMonth}
                   onChange={(e) => setNewMonth(Number(e.target.value))}
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                  className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
                 >
                   {MONTHS.map((m, i) => (
                     <option key={m} value={i + 1}>
@@ -683,13 +670,13 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
                   Year
                 </label>
                 <select
                   value={newYear}
                   onChange={(e) => setNewYear(Number(e.target.value))}
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                  className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
                 >
                   {years.map((y) => (
                     <option key={y} value={y}>
@@ -704,7 +691,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowNewModal(false)}
-                className="flex-1 border border-slate-300 text-slate-700 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
+                className="flex-1 border border-zinc-200 text-zinc-700 py-2.5 rounded-xl text-xs font-semibold hover:bg-zinc-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -712,7 +699,7 @@ export default function DashboardPage() {
                 type="button"
                 onClick={createRecord}
                 disabled={creating}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
+                className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
               >
                 {creating ? "Creating..." : "Create Record"}
               </button>

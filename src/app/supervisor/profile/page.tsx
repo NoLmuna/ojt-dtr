@@ -4,7 +4,8 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Save, User, ChevronLeft, LogOut } from "lucide-react";
+import Image from "next/image";
+import { Save, User, ChevronLeft, LogOut, CheckCircle2 } from "lucide-react";
 import { GlobalLoader } from "@/components/global-loader";
 
 interface SupervisorProfile {
@@ -70,45 +71,86 @@ export default function SupervisorProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 text-zinc-900 flex flex-col">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-30 w-full border-b border-zinc-200/80 bg-white/95 backdrop-blur-md">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link
               href="/supervisor/dashboard"
-              className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700 hover:text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200/90 px-3 py-1.5 rounded-xl shadow-2xs transition-all"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={16} />
+              <span>Back to Dashboard</span>
             </Link>
-            <span className="font-semibold text-gray-800">My Profile</span>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="flex items-center text-sm font-medium gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
-        </div>
-      </nav>
 
-      <main className="flex-1 max-w-2xl mx-auto px-4 py-8 w-full">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-100 text-blue-600 p-3 rounded-full">
-                <User size={24} />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/icons/DTR-ICON.png"
+                alt="OJT DTR Logo"
+                width={32}
+                height={32}
+                className="rounded-xl object-cover ring-1 ring-zinc-200"
+                priority
+              />
+              <span className="font-bold text-sm text-zinc-900 tracking-tight hidden sm:inline-block">
+                OJT<span className="text-blue-600">.DTR</span>
+              </span>
+            </div>
+
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              title="Sign Out"
+              className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
+        <div className="bg-white border border-zinc-200/80 rounded-2xl shadow-xs overflow-hidden">
+          <div className="p-5 sm:p-6 border-b border-zinc-100 flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
+                <User size={22} />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Supervisor Profile</h1>
-                <p className="text-sm text-gray-500">{session?.user?.email}</p>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg font-bold text-zinc-900">Supervisor Profile</h1>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    Supervisor
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 mt-0.5">{session?.user?.email}</p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {success && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+                  <CheckCircle2 size={14} />
+                  <span>Saved</span>
+                </span>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-colors cursor-pointer active:scale-98"
+              >
+                <Save size={14} />
+                <span>{saving ? "Saving..." : "Save Changes"}</span>
+              </button>
             </div>
           </div>
 
-          <div className="p-4 sm:p-6 space-y-6">
+          <div className="p-5 sm:p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">
                 Full Name
               </label>
               <input
@@ -116,37 +158,21 @@ export default function SupervisorProfilePage() {
                 value={profile.name}
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                 placeholder="e.g. Engr. Maria Santos"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Company / Organization
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">
+                Company / Agency Name
               </label>
               <input
                 type="text"
                 value={profile.company}
                 onChange={(e) => setProfile({ ...profile, company: e.target.value })}
-                placeholder="Company Name"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Company or Agency Name"
+                className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium"
               />
-            </div>
-
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              {success ? (
-                <span className="text-green-600 text-sm font-medium">✓ Profile saved successfully</span>
-              ) : (
-                <span className="hidden sm:block" />
-              )}
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex w-full sm:w-auto items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 px-5 rounded-lg transition-colors text-sm"
-              >
-                <Save size={15} />
-                {saving ? "Saving..." : "Save Profile"}
-              </button>
             </div>
           </div>
         </div>

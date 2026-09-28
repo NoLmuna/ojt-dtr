@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,13 +10,6 @@ import {
   Download,
   Save,
   Clock,
-  FileText,
-  User,
-  GraduationCap,
-  Building2,
-  ShieldCheck,
-  Calendar,
-  CheckCircle2,
   AlertCircle
 } from "lucide-react";
 import { MONTHS, calculateHours, getDaysInMonth, formatHoursMinutes } from "@/lib/utils";
@@ -73,36 +66,41 @@ export default function DTREditorPage() {
     if (status === "unauthenticated") router.replace("/");
   }, [status, router]);
 
-  const fetchRecord = useCallback(async () => {
-    const res = await fetch(`/api/dtr/${id}`, { cache: "no-store" });
-    if (!res.ok) {
-      router.replace("/dashboard");
-      return;
-    }
-    const data: DTRRecord = await res.json();
-    setRecord(data);
-
-    const map = new Map<number, DTREntry>();
-    data.entries.forEach((e) => {
-      map.set(e.day, {
-        ...e,
-        amArrival: e.amArrival ?? "",
-        amDeparture: e.amDeparture ?? "",
-        pmArrival: e.pmArrival ?? "",
-        pmDeparture: e.pmDeparture ?? "",
-        includeBreak: e.includeBreak ?? true,
-        remarks: e.remarks ?? "",
-      });
-    });
-    setEntries(map);
-    setLoading(false);
-  }, [id, router]);
-
   useEffect(() => {
-    if (status === "authenticated") {
-      fetchRecord();
+    let ignore = false;
+    if (status === "authenticated" && id) {
+      fetch(`/api/dtr/${id}`, { cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) {
+            router.replace("/dashboard");
+            return null;
+          }
+          return res.json();
+        })
+        .then((data: DTRRecord | null) => {
+          if (!data || ignore) return;
+          setRecord(data);
+
+          const map = new Map<number, DTREntry>();
+          data.entries.forEach((e) => {
+            map.set(e.day, {
+              ...e,
+              amArrival: e.amArrival ?? "",
+              amDeparture: e.amDeparture ?? "",
+              pmArrival: e.pmArrival ?? "",
+              pmDeparture: e.pmDeparture ?? "",
+              includeBreak: e.includeBreak ?? true,
+              remarks: e.remarks ?? "",
+            });
+          });
+          setEntries(map);
+          setLoading(false);
+        });
     }
-  }, [status, fetchRecord]);
+    return () => {
+      ignore = true;
+    };
+  }, [status, id, router]);
 
   const updateEntry = <K extends keyof DTREntry>(day: number, field: K, value: DTREntry[K]) => {
     setEntries((prev) => {
@@ -216,21 +214,21 @@ export default function DTREditorPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col pb-20">
+    <div className="min-h-screen bg-slate-50 text-zinc-900 flex flex-col pb-20">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 w-full border-b border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs">
+      <header className="sticky top-0 z-30 w-full border-b border-zinc-200/80 bg-white/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href={isSupervisor ? "/supervisor/dashboard" : "/dashboard"}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl transition-all"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700 hover:text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200/90 px-3 py-1.5 rounded-xl shadow-2xs transition-all"
             >
               <ChevronLeft size={16} />
               <span className="hidden sm:inline">Back to Dashboard</span>
               <span className="sm:hidden">Back</span>
             </Link>
 
-            <span className="text-slate-300">/</span>
+            <span className="text-zinc-300">/</span>
 
             <div className="flex items-center gap-2">
               <Image
@@ -238,15 +236,15 @@ export default function DTREditorPage() {
                 alt="OJT DTR Logo"
                 width={32}
                 height={32}
-                className="rounded-xl shadow-xs object-cover"
+                className="rounded-xl object-cover ring-1 ring-zinc-200"
                 priority
               />
               <div>
-                <span className="font-bold text-sm sm:text-base text-slate-900 tracking-tight">
+                <span className="font-bold text-sm sm:text-base text-zinc-900 tracking-tight">
                   {MONTHS[record.month - 1]} {record.year}
                 </span>
                 <span
-                  className={`ml-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${getStatusBadge(
+                  className={`ml-2 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${getStatusBadge(
                     record.status
                   )}`}
                 >
@@ -265,7 +263,7 @@ export default function DTREditorPage() {
 
             <button
               onClick={exportPDF}
-              className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-3 sm:px-4 rounded-xl shadow-xs transition-all cursor-pointer active:scale-98"
+              className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2 px-3 sm:px-4 rounded-xl shadow-xs transition-all cursor-pointer active:scale-98"
             >
               <Download size={14} />
               <span className="hidden sm:inline">Export Form 48 PDF</span>
@@ -276,10 +274,10 @@ export default function DTREditorPage() {
               <button
                 onClick={saveAll}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold py-2 px-3 sm:px-4 rounded-xl shadow-xs transition-all cursor-pointer active:scale-98"
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-3 sm:px-4 rounded-xl shadow-xs transition-all cursor-pointer active:scale-98"
               >
                 <Save size={14} />
-                <span>{saving ? "Saving..." : "Save"}</span>
+                <span>{saving ? "Saving..." : saved ? "✓ Saved" : "Save"}</span>
               </button>
             )}
           </div>
@@ -288,78 +286,59 @@ export default function DTREditorPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Info Banner Card */}
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <User size={13} className="text-blue-600" />
-                Trainee Name
+        {/* Trainee Metadata Strip */}
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div>
+              <span className="text-zinc-500 font-medium block text-[11px]">Trainee</span>
+              <span className="font-semibold text-zinc-900 truncate block mt-0.5">
+                {record.user.name || "Not set"}
               </span>
-              <p className="font-bold text-sm text-slate-800 truncate">
-                {record.user.name || <span className="text-slate-400 font-normal italic">Not set</span>}
-              </p>
             </div>
-
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <GraduationCap size={13} className="text-indigo-600" />
-                Course / Program
+            <div>
+              <span className="text-zinc-500 font-medium block text-[11px]">Course / Program</span>
+              <span className="font-semibold text-zinc-900 truncate block mt-0.5">
+                {record.user.course || "Not set"}
               </span>
-              <p className="font-bold text-sm text-slate-800 truncate">
-                {record.user.course || <span className="text-slate-400 font-normal italic">Not set</span>}
-              </p>
             </div>
-
-            <div className="space-y-1" title={record.user.company || ""}>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Building2 size={13} className="text-emerald-600" />
-                Agency / Workplace
+            <div title={record.user.company || ""}>
+              <span className="text-zinc-500 font-medium block text-[11px]">Workplace</span>
+              <span className="font-semibold text-zinc-900 truncate block mt-0.5">
+                {displayCompany || "Not set"}
               </span>
-              <p className="font-bold text-sm text-slate-800 truncate">
-                {displayCompany || <span className="text-slate-400 font-normal italic">Not set</span>}
-              </p>
             </div>
-
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <ShieldCheck size={13} className="text-violet-600" />
-                Supervisor
+            <div>
+              <span className="text-zinc-500 font-medium block text-[11px]">Supervisor</span>
+              <span className="font-semibold text-zinc-900 truncate block mt-0.5">
+                {record.user.supervisor || "Unassigned"}
               </span>
-              <p className="font-bold text-sm text-slate-800 truncate">
-                {record.user.supervisor ? (
-                  <span className="text-emerald-700 font-semibold">{record.user.supervisor}</span>
-                ) : (
-                  <span className="text-slate-400 font-normal italic">Unassigned</span>
-                )}
-              </p>
             </div>
           </div>
 
           {(!record.user.name || !record.user.company) && (
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3.5 py-2 rounded-xl">
+            <div className="mt-3 pt-3 border-t border-zinc-200 flex items-center justify-between text-xs text-amber-800 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-xl">
               <div className="flex items-center gap-2">
-                <AlertCircle size={15} />
-                <span>Some profile fields are incomplete for this record.</span>
+                <AlertCircle size={14} className="text-amber-600" />
+                <span>Profile information is incomplete for official certification.</span>
               </div>
-              <Link href="/profile" className="font-bold underline hover:text-amber-900">
-                Update Profile &rarr;
+              <Link href="/profile" className="font-semibold hover:underline">
+                Update &rarr;
               </Link>
             </div>
           )}
         </div>
 
         {/* DTR Table Sheet Card */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="bg-white border border-zinc-200/80 rounded-2xl shadow-xs overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-bold text-slate-900">Attendance Sheet Entries</h2>
-              <p className="text-xs text-slate-500">
-                Record morning and afternoon arrivals and departures. Changes are computed in real time.
+              <h2 className="text-sm sm:text-base font-bold text-zinc-900">Attendance Sheet Entries</h2>
+              <p className="text-xs text-zinc-500">
+                Official civil service time record with automated computation.
               </p>
             </div>
-            <div className="text-xs text-slate-500 font-medium">
-              Month total: <span className="font-bold text-blue-700 font-mono">{formatHoursMinutes(totalHours)}</span>
+            <div className="text-xs text-zinc-500 font-medium">
+              Total Rendered: <span className="font-bold text-blue-700 font-mono text-sm ml-1">{formatHoursMinutes(totalHours)}</span>
             </div>
           </div>
 
@@ -367,30 +346,28 @@ export default function DTREditorPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-3 text-center w-14">Day</th>
-                  <th className="py-3 px-2 text-center" colSpan={2}>
+                <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-2.5 px-3 text-center w-14">Day</th>
+                  <th className="py-2.5 px-2 text-center" colSpan={2}>
                     Morning (A.M.)
                   </th>
-                  <th className="py-3 px-2 text-center" colSpan={2}>
+                  <th className="py-2.5 px-2 text-center" colSpan={2}>
                     Afternoon (P.M.)
                   </th>
-                  <th className="py-3 px-3 text-center w-24">Rendered</th>
-                  <th className="py-3 px-3 text-center w-20">1-hr Break</th>
-                  <th className="py-3 px-3 text-left min-w-[140px]">Remarks</th>
+                  <th className="py-2.5 px-3 text-center w-24">Hours</th>
+                  <th className="py-2.5 px-3 text-left min-w-[150px]">Remarks</th>
                 </tr>
-                <tr className="bg-slate-100/60 border-b border-slate-200/70 text-[10px] text-slate-400 font-semibold uppercase">
+                <tr className="bg-zinc-50/60 border-b border-zinc-200 text-[10px] text-zinc-400 font-semibold uppercase">
                   <th />
                   <th className="py-1 px-2 text-center">Arrival</th>
                   <th className="py-1 px-2 text-center">Departure</th>
                   <th className="py-1 px-2 text-center">Arrival</th>
                   <th className="py-1 px-2 text-center">Departure</th>
-                  <th />
                   <th />
                   <th />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-zinc-100 font-medium">
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                   const date = new Date(record.year, record.month - 1, day);
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
@@ -403,17 +380,17 @@ export default function DTREditorPage() {
                       key={day}
                       className={`transition-colors ${
                         isWeekend && !allowWeekends
-                          ? "bg-slate-50/70 text-slate-400"
+                          ? "bg-zinc-50/60 text-zinc-400"
                           : isWeekend && allowWeekends
                           ? "bg-amber-50/30 hover:bg-amber-50/60"
-                          : "hover:bg-blue-50/30"
+                          : "hover:bg-zinc-50/80"
                       }`}
                     >
                       {/* Day Column */}
-                      <td className="py-2.5 px-3 text-center font-bold">
+                      <td className="py-2 px-3 text-center font-bold">
                         <div className="flex flex-col items-center">
-                          <span className={`text-xs ${isWeekend ? "text-slate-400" : "text-slate-900"}`}>{day}</span>
-                          <span className={`text-[10px] uppercase font-semibold ${isWeekend ? "text-rose-400" : "text-slate-400"}`}>
+                          <span className={`text-xs ${isWeekend ? "text-zinc-400" : "text-zinc-900"}`}>{day}</span>
+                          <span className={`text-[10px] uppercase font-semibold ${isWeekend ? "text-rose-500" : "text-zinc-400"}`}>
                             {dayName}
                           </span>
                         </div>
@@ -421,7 +398,7 @@ export default function DTREditorPage() {
 
                       {/* Weekend Skipped or Time Inputs */}
                       {isWeekend && !allowWeekends ? (
-                        <td colSpan={7} className="py-2.5 px-3 text-center text-slate-400 text-xs italic bg-slate-50/50">
+                        <td colSpan={6} className="py-2 px-3 text-center text-zinc-400 text-xs italic bg-zinc-50/40">
                           Weekend
                         </td>
                       ) : (
@@ -434,7 +411,7 @@ export default function DTREditorPage() {
                               pmDeparture: "17:00",
                             };
                             return (
-                              <td key={field} className="py-1.5 px-1.5">
+                              <td key={field} className="py-1 px-1.5">
                                 <input
                                   disabled={!isOwner}
                                   type="time"
@@ -445,7 +422,7 @@ export default function DTREditorPage() {
                                     }
                                   }}
                                   onChange={(e) => updateEntry(day, field, e.target.value)}
-                                  className="w-full min-w-[76px] border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-center font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
+                                  className="w-full min-w-[74px] border border-zinc-300 rounded-lg px-2 py-1 text-xs text-center font-mono text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:opacity-50 disabled:bg-zinc-50 disabled:cursor-not-allowed"
                                 />
                               </td>
                             );
@@ -456,26 +433,15 @@ export default function DTREditorPage() {
                             {entry && entry.hoursWorked > 0 ? formatHoursMinutes(entry.hoursWorked) : "—"}
                           </td>
 
-                          {/* 1-Hr Break Checkbox */}
-                          <td className="py-2 px-3 text-center">
-                            <input
-                              disabled={!isOwner}
-                              type="checkbox"
-                              checked={entry?.includeBreak ?? true}
-                              onChange={(e) => updateEntry(day, "includeBreak", e.target.checked)}
-                              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                            />
-                          </td>
-
                           {/* Remarks */}
-                          <td className="py-1.5 px-2">
+                          <td className="py-1 px-2">
                             <input
                               disabled={!isSupervisor}
                               type="text"
                               value={entry?.remarks ?? ""}
                               onChange={(e) => updateEntry(day, "remarks", e.target.value)}
-                              placeholder={isSupervisor ? "Add supervisor note" : "Optional"}
-                              className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
+                              placeholder={isSupervisor ? "Add note" : ""}
+                              className="w-full border border-zinc-300 rounded-lg px-2.5 py-1 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white disabled:opacity-50 disabled:bg-zinc-50 disabled:cursor-not-allowed"
                             />
                           </td>
                         </>
@@ -485,45 +451,17 @@ export default function DTREditorPage() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-slate-50 border-t-2 border-slate-200/90 font-bold text-slate-800 text-xs">
+                <tr className="bg-zinc-50 border-t-2 border-zinc-200 font-bold text-zinc-700 text-xs">
                   <td colSpan={5} className="py-3 px-4 text-right uppercase tracking-wider">
                     Total Hours Rendered:
                   </td>
                   <td className="py-3 px-3 text-center font-mono text-sm text-blue-700">
                     {formatHoursMinutes(totalHours)}
                   </td>
-                  <td colSpan={2} />
+                  <td />
                 </tr>
               </tfoot>
             </table>
-          </div>
-        </div>
-
-        {/* Bottom Floating Save Action */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-          <p className="text-xs text-slate-500">
-            Export generates an official double-column Civil Service Form 48 ready for printing and signatures.
-          </p>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={exportPDF}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow-xs transition-all cursor-pointer active:scale-98"
-            >
-              <Download size={15} />
-              <span>Export Form 48 PDF</span>
-            </button>
-
-            {isOwner && (
-              <button
-                onClick={saveAll}
-                disabled={saving}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs py-2.5 px-6 rounded-xl shadow-md transition-all cursor-pointer active:scale-98"
-              >
-                <Save size={15} />
-                <span>{saving ? "Saving..." : saved ? "✓ Saved" : "Save All Changes"}</span>
-              </button>
-            )}
           </div>
         </div>
       </main>
