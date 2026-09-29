@@ -100,7 +100,7 @@ export const userUpdateSchema = z
     name: optionalNullableString(100),
     course: optionalNullableString(150),
     school: optionalNullableString(150),
-    company: optionalNullableString(150),
+    company: optionalNullableString(300),
     companyLat: z.union([z.number().min(-90).max(90), z.null()]).optional(),
     companyLng: z.union([z.number().min(-180).max(180), z.null()]).optional(),
     supervisorId: optionalNullableString(100),
@@ -135,6 +135,11 @@ export const geocodeQuerySchema = z.object({
     .min(3)
     .max(120)
     .regex(/^[\p{L}\p{N}\s,.'\-#/()]+$/u, "Search contains unsupported characters."),
+});
+
+export const geocodeReverseSchema = z.object({
+  lat: z.coerce.number().min(-90).max(90),
+  lon: z.coerce.number().min(-180).max(180),
 });
 
 export function jsonResponse(body: unknown, init?: ResponseInit) {

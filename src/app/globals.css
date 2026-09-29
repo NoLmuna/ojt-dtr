@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
   --background: #f8fafc;
@@ -42,4 +43,22 @@ body {
 
 .animate-fade-in {
   animation: fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Leaflet Tailwind & layout compatibility fixes */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
 }

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
   ChevronLeft,
   MapPin,
@@ -18,11 +19,23 @@ import {
   AlertCircle,
   LogOut,
   Send,
-  ShieldCheck
+  ShieldCheck,
+  Compass,
+  Trash2,
 } from "lucide-react";
 import { GlobalLoader } from "@/components/global-loader";
 import { formatTime } from "@/lib/utils";
 import { toast } from "@/components/ui/toaster";
+
+const LocationPickerModal = dynamic(
+  () => import("@/components/location-picker-modal"),
+  { ssr: false }
+);
+
+const LocationPreviewMap = dynamic(
+  () => import("@/components/location-preview-map"),
+  { ssr: false }
+);
 
 interface NominatimResult {
   place_id: number;
@@ -145,6 +158,8 @@ export default function ProfilePage() {
     }, 500);
   };
 
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+
   const handleSelectSuggestion = (result: NominatimResult) => {
     setProfile((prev) => ({
       ...prev,
@@ -154,6 +169,25 @@ export default function ProfilePage() {
     }));
     setSuggestions([]);
     setShowSuggestions(false);
+  };
+
+  const handleMapConfirm = (data: { lat: number; lng: number; address: string }) => {
+    setProfile((prev) => ({
+      ...prev,
+      company: data.address,
+      companyLat: data.lat,
+      companyLng: data.lng,
+    }));
+    toast("Workplace location pinned. Remember to click 'Save Changes'!", "success");
+  };
+
+  const handleClearPin = () => {
+    setProfile((prev) => ({
+      ...prev,
+      companyLat: null,
+      companyLng: null,
+    }));
+    toast("Geofence coordinates removed.", "info");
   };
 
   const handleSave = async () => {
@@ -494,77 +528,158 @@ export default function ProfilePage() {
 
         {/* Section 3: Training Organization & Geofence Coordinates */}
         <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-xs space-y-5">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-zinc-100">
-            <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <Building2 size={16} />
+          <div className="flex items-center justify-between pb-3 border-b border-zinc-100 flex-wrap gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Building2 size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-zinc-900">Training Agency & Location Geofence</h2>
+                <p className="text-xs text-zinc-500">
+                  Punches are validated within a 100-meter radius of these coordinates.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-zinc-900">Training Agency & Location Geofence</h2>
-              <p className="text-xs text-zinc-500">
-                Punches are validated within a 100-meter radius of these coordinates.
-              </p>
-            </div>
+
+            <button
+              type="button"
+              onClick={() => setMapModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs active:scale-98"
+            >
+              <Compass size={14} />
+              <span>{profile.companyLat !== null ? "Adjust Pin on Map" : "Pin Location on Map"}</span>
+            </button>
           </div>
 
-          <div ref={companyWrapperRef} className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">
-              Company / Agency Address
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={profile.company}
-                onChange={(e) => handleCompanyChange(e.target.value)}
-                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                placeholder="Search workplace address (e.g. Subic Bay, DOST, etc.)"
-                autoComplete="off"
-                className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                {suggestionLoading ? (
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                ) : profile.companyLat !== null ? (
-                  <span className="flex items-center justify-center h-5 w-5 rounded-full bg-emerald-100 text-emerald-600">
-                    <CheckCircle2 size={14} />
-                  </span>
-                ) : (
-                  <MapPin size={16} className="text-zinc-400" />
+          <div ref={companyWrapperRef} className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600">
+                  Company / Agency Address
+                </label>
+                {profile.companyLat !== null && (
+                  <button
+                    type="button"
+                    onClick={handleClearPin}
+                    className="text-[11px] text-zinc-400 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 size={12} />
+                    <span>Clear Pin</span>
+                  </button>
                 )}
               </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={profile.company}
+                  onChange={(e) => handleCompanyChange(e.target.value)}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  placeholder="Search workplace address (e.g. Subic Bay, DOST, etc.)"
+                  autoComplete="off"
+                  className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 pr-28 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {suggestionLoading ? (
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-1" />
+                  ) : profile.companyLat !== null ? (
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-emerald-100 text-emerald-600 mr-1" title="Location coordinates pinned">
+                      <CheckCircle2 size={14} />
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setMapModalOpen(true)}
+                    className="px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                    title="Open map to pin exact location"
+                  >
+                    <MapPin size={13} className="text-blue-600" />
+                    <span>Map</span>
+                  </button>
+                </div>
 
-              {/* Autocomplete Dropdown */}
-              {showSuggestions && (
-                <ul className="absolute z-50 mt-1.5 w-full bg-white border border-zinc-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-zinc-100">
-                  {suggestions.map((s) => (
-                    <li key={s.place_id}>
-                      <button
-                        type="button"
-                        onMouseDown={() => handleSelectSuggestion(s)}
-                        className="w-full text-left px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 flex items-start gap-2.5 transition-colors cursor-pointer"
-                      >
-                        <MapPin size={14} className="mt-0.5 shrink-0 text-blue-600" />
-                        <span className="line-clamp-2 leading-relaxed">{s.display_name}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {/* Autocomplete Dropdown */}
+                {showSuggestions && (
+                  <ul className="absolute z-50 mt-1.5 w-full bg-white border border-zinc-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-zinc-100">
+                    {suggestions.map((s) => (
+                      <li key={s.place_id}>
+                        <button
+                          type="button"
+                          onMouseDown={() => handleSelectSuggestion(s)}
+                          className="w-full text-left px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 flex items-start gap-2.5 transition-colors cursor-pointer"
+                        >
+                          <MapPin size={14} className="mt-0.5 shrink-0 text-blue-600" />
+                          <span className="line-clamp-2 leading-relaxed">{s.display_name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
-            {/* Geofence Status Badge */}
-            {profile.companyLat !== null ? (
-              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 font-medium">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                <span>
-                  Location pinned ({profile.companyLat.toFixed(4)}, {profile.companyLng?.toFixed(4)}) — Geofence punch enabled.
-                </span>
+            {/* Geofence Status Badge & Map Preview */}
+            {profile.companyLat !== null && profile.companyLng !== null ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>
+                      Location pinned ({profile.companyLat.toFixed(4)}, {profile.companyLng.toFixed(4)}) — Geofence punch enabled (100m radius).
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMapModalOpen(true)}
+                    className="text-xs font-semibold text-blue-700 hover:text-blue-900 underline shrink-0 cursor-pointer ml-2"
+                  >
+                    Adjust
+                  </button>
+                </div>
+
+                {/* Mini-Map Preview */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                      Geofence Map Preview
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setMapModalOpen(true)}
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                    >
+                      Expand Map
+                    </button>
+                  </div>
+                  {!mapModalOpen && (
+                    <LocationPreviewMap
+                      lat={profile.companyLat}
+                      lng={profile.companyLng}
+                      onOpenPicker={() => setMapModalOpen(true)}
+                    />
+                  )}
+                </div>
               </div>
-            ) : profile.company.trim().length > 0 ? (
-              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                <AlertCircle size={14} className="shrink-0 text-amber-600" />
-                <span>Select from the search dropdown suggestions to pin coordinates for GPS verification.</span>
+            ) : (
+              <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2 text-xs text-blue-900">
+                  <AlertCircle size={15} className="shrink-0 text-blue-600 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block">Geofence Coordinates Not Set</span>
+                    <span className="text-blue-700 text-[11px]">
+                      Search and select your workplace from the dropdown, or open the interactive map to place your pin directly.
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMapModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0 self-start sm:self-auto"
+                >
+                  <MapPin size={13} />
+                  <span>Open Map to Pin</span>
+                </button>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
 
@@ -637,6 +752,15 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
+
+      <LocationPickerModal
+        isOpen={mapModalOpen}
+        onClose={() => setMapModalOpen(false)}
+        initialLat={profile.companyLat}
+        initialLng={profile.companyLng}
+        initialAddress={profile.company}
+        onConfirm={handleMapConfirm}
+      />
     </div>
   );
 }
