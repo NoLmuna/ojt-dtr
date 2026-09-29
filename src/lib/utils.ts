@@ -87,8 +87,12 @@ export function calculateHours(
 
 export function formatTime(time: string | null): string {
   if (!time) return "";
-  const [h, m] = time.split(":");
-  const hour = parseInt(h);
+  if (time.includes("AM") || time.includes("PM")) return time;
+  const parts = time.split(":");
+  if (parts.length < 2) return time;
+  const hour = parseInt(parts[0], 10);
+  if (isNaN(hour)) return time;
+  const m = parts[1];
   const ampm = hour >= 12 ? "PM" : "AM";
   const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
   return `${displayHour}:${m} ${ampm}`;

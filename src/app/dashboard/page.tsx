@@ -210,9 +210,18 @@ export default function DashboardPage() {
         const res = await fetch(`/api/dtr/${id}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
-          data.entries.sort((a: { day: number }, b: { day: number }) => a.day - b.day);
+          if (Array.isArray(data.entries)) {
+            data.entries.sort((a: { day: number }, b: { day: number }) => a.day - b.day);
+          } else {
+            data.entries = [];
+          }
           recordsToExport.push(data);
         }
+      }
+
+      if (recordsToExport.length === 0) {
+        toast("Failed to load records for export.", "error");
+        return;
       }
 
       recordsToExport.sort((a, b) => {

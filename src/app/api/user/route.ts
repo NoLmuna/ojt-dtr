@@ -20,7 +20,19 @@ export async function PATCH(req: NextRequest) {
     return parsed.response;
   }
 
-  const { course, school, company, companyLat, companyLng, supervisorId, targetHours, name, allowWeekends } = parsed.data;
+  const {
+    course,
+    school,
+    company,
+    companyLat,
+    companyLng,
+    supervisorId,
+    targetHours,
+    name,
+    allowWeekends,
+    workStartTime,
+    workEndTime,
+  } = parsed.data;
 
   const hasLatitude = companyLat !== undefined;
   const hasLongitude = companyLng !== undefined;
@@ -30,7 +42,19 @@ export async function PATCH(req: NextRequest) {
 
   const user = await prisma.user.update({
     where: { id: session.user.id },
-    data: cleanUndefined({ course, school, company, companyLat, companyLng, targetHours, supervisorId, name, allowWeekends }),
+    data: cleanUndefined({
+      course,
+      school,
+      company,
+      companyLat,
+      companyLng,
+      targetHours,
+      supervisorId,
+      name,
+      allowWeekends,
+      workStartTime,
+      workEndTime,
+    }),
   });
 
   return jsonResponse(user);
@@ -56,6 +80,8 @@ export async function GET() {
       companyLng: true,
       targetHours: true,
       allowWeekends: true,
+      workStartTime: true,
+      workEndTime: true,
       supervisorId: true,
       role: true,
       supervisor: {

@@ -12,7 +12,7 @@ import {
   Clock,
   AlertCircle
 } from "lucide-react";
-import { MONTHS, calculateHours, getDaysInMonth, formatHoursMinutes } from "@/lib/utils";
+import { MONTHS, calculateHours, getDaysInMonth, formatHoursMinutes, formatTime } from "@/lib/utils";
 import { generateDTRPdf } from "@/lib/pdf";
 import { GlobalLoader } from "@/components/global-loader";
 import { toast } from "@/components/ui/toaster";
@@ -47,6 +47,8 @@ interface DTRRecord {
     company: string | null;
     supervisor: string | null;
     allowWeekends?: boolean;
+    workStartTime?: string | null;
+    workEndTime?: string | null;
   };
 }
 
@@ -288,7 +290,7 @@ export default function DTREditorPage() {
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Trainee Metadata Strip */}
         <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-xs">
             <div>
               <span className="text-zinc-500 font-medium block text-[11px]">Trainee</span>
               <span className="font-semibold text-zinc-900 truncate block mt-0.5">
@@ -311,6 +313,12 @@ export default function DTREditorPage() {
               <span className="text-zinc-500 font-medium block text-[11px]">Supervisor</span>
               <span className="font-semibold text-zinc-900 truncate block mt-0.5">
                 {record.user.supervisor || "Unassigned"}
+              </span>
+            </div>
+            <div>
+              <span className="text-zinc-500 font-medium block text-[11px]">Daily Schedule</span>
+              <span className="font-semibold text-zinc-900 truncate block mt-0.5">
+                {formatTime(record.user.workStartTime || "07:30")} - {formatTime(record.user.workEndTime || "16:30")}
               </span>
             </div>
           </div>

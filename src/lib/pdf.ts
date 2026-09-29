@@ -25,6 +25,8 @@ interface DTRRecord {
     school: string | null;
     company: string | null;
     supervisor: string | null;
+    workStartTime?: string | null;
+    workEndTime?: string | null;
   };
 }
 
@@ -95,8 +97,14 @@ function renderDTRHalf(doc: jsPDF, record: DTRRecord, startX: number) {
   doc.text("Official hours of arrival", leftEnd, infoY + 5);
   doc.text("Regular Days", cx - 3, infoY + 5);
   doc.setFont("helvetica", "bold");
-  doc.text("7:30 AM - 4:30 PM", cx + 18, infoY + 4.5);
-  doc.line(cx + 17, infoY + 6, rightEnd, infoY + 6);
+  const startStr = record.user.workStartTime ? formatTime(record.user.workStartTime) : "7:30 AM";
+  const endStr = record.user.workEndTime ? formatTime(record.user.workEndTime) : "4:30 PM";
+  const regularHoursText = `${startStr} - ${endStr}`;
+  const schedLineStart = cx + 16;
+  const schedLineEnd = rightEnd;
+  const schedCenter = schedLineStart + (schedLineEnd - schedLineStart) / 2;
+  doc.text(regularHoursText, schedCenter, infoY + 4.5, { align: "center" });
+  doc.line(schedLineStart, infoY + 6, schedLineEnd, infoY + 6);
 
   doc.setFont("helvetica", "italic");
   doc.text("and departure", leftEnd + 5, infoY + 9);
@@ -105,7 +113,7 @@ function renderDTRHalf(doc: jsPDF, record: DTRRecord, startX: number) {
   const tableStartY = infoY + 13;
 
   const entryMap = new Map<number, DTREntry>();
-  record.entries.forEach((e) => entryMap.set(e.day, e));
+  (record.entries || []).forEach((e) => entryMap.set(e.day, e));
 
   const rows: TableRow[] = [];
   const daysInMonth = new Date(record.year, record.month, 0).getDate();
@@ -262,21 +270,28 @@ export function generateDTRPdf(record: DTRRecord): void {
 }
 
 export function generateMultiMonthPdf(records: DTRRecord[]): void {
+  if (!records || records.length === 0) return;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  const validRecords = records.filter((record) => record.entries.some((entry) => entry.hoursWorked > 0));
-  if (validRecords.length === 0) return;
-
-  for (let i = 0; i < validRecords.length; i++) {
+  for (let i = 0; i < records.length; i++) {
     if (i > 0 && i % 2 === 0) {
       doc.addPage();
     }
-    const record = validRecords[i];
+    const record = records[i];
     const startX = (i % 2 === 0) ? 0 : 105;
     renderDTRHalf(doc, record, startX);
+
+    // If we just rendered the right half, draw a subtle dashed cutting guide down the center of the page
+    if (startX === 105) {
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineDashPattern([2, 2], 0);
+      doc.line(105, 8, 105, 289);
+      doc.setLineDashPattern([], 0);
+      doc.setDrawColor(0, 0, 0);
+    }
   }
 
-  const firstRecord = validRecords[0];
+  const firstRecord = records[0];
   const filename = `DTR_${firstRecord.user.name?.replace(/\\s+/g, "_") ?? "trainee"}_MultiMonth.pdf`;
   doc.save(filename);
 }

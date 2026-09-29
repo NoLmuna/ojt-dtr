@@ -21,6 +21,8 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { GlobalLoader } from "@/components/global-loader";
+import { formatTime } from "@/lib/utils";
+import { toast } from "@/components/ui/toaster";
 
 interface NominatimResult {
   place_id: number;
@@ -41,6 +43,8 @@ interface ProfileData {
   supervisorName?: string;
   targetHours: number | null;
   allowWeekends: boolean;
+  workStartTime: string | null;
+  workEndTime: string | null;
 }
 
 export default function ProfilePage() {
@@ -56,6 +60,8 @@ export default function ProfilePage() {
     supervisorId: null,
     targetHours: null,
     allowWeekends: false,
+    workStartTime: "07:30",
+    workEndTime: "16:30",
   });
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
@@ -97,6 +103,8 @@ export default function ProfilePage() {
             supervisorName: data.supervisor?.name ?? "",
             targetHours: data.targetHours ?? null,
             allowWeekends: data.allowWeekends ?? false,
+            workStartTime: data.workStartTime ?? "07:30",
+            workEndTime: data.workEndTime ?? "16:30",
           });
           setLoading(false);
         });
@@ -154,14 +162,28 @@ export default function ProfilePage() {
     void _se;
     void _sn;
 
-    await fetch("/api/user", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dataToSave),
-    });
-    setSaving(false);
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 2500);
+    try {
+      const res = await fetch("/api/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSave),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Failed to save profile." }));
+        toast(errorData.error || "Failed to save profile.", "error");
+        setSaving(false);
+        return;
+      }
+
+      setSaving(false);
+      setSuccess(true);
+      toast("Profile updated successfully.", "success");
+      setTimeout(() => setSuccess(false), 2500);
+    } catch {
+      toast("An error occurred while saving profile.", "error");
+      setSaving(false);
+    }
   };
 
   const handleInvite = async () => {
@@ -347,6 +369,71 @@ export default function ProfilePage() {
                   }`}
                 />
               </button>
+            </div>
+          </div>
+
+          {/* Regular Days Arrival and Departure */}
+          <div className="pt-4 border-t border-zinc-100 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-700">
+                  Official Hours of Arrival &amp; Departure
+                </h3>
+                <p className="text-[11px] text-zinc-500">
+                  Set your daily schedule (Time In / Time Out) printed on Civil Service Form No. 48.
+                </p>
+              </div>
+              {(profile.workStartTime || profile.workEndTime) && (
+                <span className="self-start sm:self-auto inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+                  Regular Days: {formatTime(profile.workStartTime || "07:30")} - {formatTime(profile.workEndTime || "16:30")}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">
+                  Regular Arrival (Time In)
+                </label>
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={profile.workStartTime ?? "07:30"}
+                    onChange={(e) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        workStartTime: e.target.value || null,
+                      }))
+                    }
+                    className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                  />
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  Default: 7:30 AM
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">
+                  Regular Departure (Time Out)
+                </label>
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={profile.workEndTime ?? "16:30"}
+                    onChange={(e) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        workEndTime: e.target.value || null,
+                      }))
+                    }
+                    className="w-full border border-zinc-300 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                  />
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  Default: 4:30 PM
+                </p>
+              </div>
             </div>
           </div>
         </div>

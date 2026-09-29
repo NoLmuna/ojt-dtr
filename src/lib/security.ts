@@ -6,7 +6,7 @@ import { getDaysInMonth } from "@/lib/utils";
 // Expose AES secret to client safely, using a consistent key so client and server can communicate.
 export const AES_SECRET = process.env.NEXT_PUBLIC_AES_SECRET || "AES_ENCRYPTION_SECRET_KEY_123!";
 
-export function encryptAES(data: any): string {
+export function encryptAES(data: unknown): string {
   try {
     return CryptoJS.AES.encrypt(JSON.stringify(data), AES_SECRET).toString();
   } catch (error) {
@@ -15,6 +15,7 @@ export function encryptAES(data: any): string {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic AES decryption target payload is dynamically deserialized JSON
 export function decryptAES(cipherText: string): any {
   try {
     const bytes = CryptoJS.AES.decrypt(cipherText, AES_SECRET);
@@ -105,6 +106,14 @@ export const userUpdateSchema = z
     supervisorId: optionalNullableString(100),
     targetHours: z.union([z.number().min(1).max(2000), z.null()]).optional(),
     allowWeekends: z.boolean().optional(),
+    workStartTime: z.preprocess(
+      normalizeOptionalString,
+      z.union([z.string().regex(TIME_PATTERN, "Invalid arrival time format (HH:mm)."), z.null()]).optional()
+    ),
+    workEndTime: z.preprocess(
+      normalizeOptionalString,
+      z.union([z.string().regex(TIME_PATTERN, "Invalid departure time format (HH:mm)."), z.null()]).optional()
+    ),
   })
   .strict();
 

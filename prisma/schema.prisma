@@ -26,6 +26,8 @@ model User {
   companyLng    Float?
   targetHours   Float?
   allowWeekends  Boolean     @default(false)
+  workStartTime String?     @default("07:30")
+  workEndTime   String?     @default("16:30")
   
   // A trainee can have one supervisor
   supervisorId  String?
